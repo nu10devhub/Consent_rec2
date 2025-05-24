@@ -12,9 +12,17 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.816.0",
     "@aws-sdk/s3-request-presigner": "^3.816.0",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
     "lucide-react": "^0.344.0",
+    "multer": "^2.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "uuid": "^11.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
