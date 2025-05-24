@@ -21,9 +21,9 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-const LOG_FILE_KEY = 'recordings/recordings_log.xlsx'; // or any path you want
+const LOG_FILE_KEY = 'recordings_log.xlsx'; // or any path you want
 
-async function appendLogToS3(recordingName, campaignNumber) {
+async function appendLogToS3(recordingName, campaignNumber, watchedDuration) {
   let rows = [];
   let workbook;
 
@@ -34,8 +34,7 @@ async function appendLogToS3(recordingName, campaignNumber) {
     rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
   } catch (err) {
     if (err.code === 'NoSuchKey') {
-      // File doesn't exist — create a new workbook
-      rows = [['Recording Name', 'Campaign Number']];
+      rows = [['Recording Name', 'Campaign Number', 'Watched Duration (seconds)']];
       workbook = XLSX.utils.book_new();
     } else {
       console.error('Error reading Excel file:', err);
@@ -43,7 +42,7 @@ async function appendLogToS3(recordingName, campaignNumber) {
     }
   }
 
-  rows.push([recordingName, campaignNumber]);
+  rows.push([recordingName, campaignNumber, watchedDuration]);
 
   const newSheet = XLSX.utils.aoa_to_sheet(rows);
   const newWorkbook = XLSX.utils.book_new();
@@ -58,12 +57,12 @@ async function appendLogToS3(recordingName, campaignNumber) {
     ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   }).promise();
 
-  console.log(`✅ Log saved for ${recordingName} | Campaign: ${campaignNumber}`);
+  console.log(`✅ Log saved for ${recordingName} | Campaign: ${campaignNumber}, Duration: ${watchedDuration}`);
 }
 
 app.post('/upload', upload.single('video'), async (req, res) => {
   const file = req.file;
-  const { campaignNumber } = req.body; // Expect this from frontend
+  const { campaignNumber, watchedDuration } = req.body; // Expect this from frontend
 
   if (!file) {
     return res.status(400).send('Missing video file');
@@ -81,7 +80,7 @@ app.post('/upload', upload.single('video'), async (req, res) => {
 
   try {
     const result = await s3.upload(uploadParams).promise();
-    await appendLogToS3(recordingName, campaignNumber || 'N/A'); // Default to 001 if not provided
+    await appendLogToS3(recordingName, campaignNumber || 'N/A', watchedDuration || '0'); // Default to 001 if not provided
     res.status(200).json({ url: result.Location });
   } catch (err) {
     console.error(err);
