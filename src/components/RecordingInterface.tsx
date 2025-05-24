@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, StopCircle } from 'lucide-react';
+import { Camera, StopCircle, Video, Square } from 'lucide-react';
 import { RecordingStatus } from '../types';
 import axios from 'axios';
 
@@ -7,12 +7,14 @@ interface RecordingInterfaceProps {
   onStartRecording: () => void;
   onStopRecording: () => void;
   recordingStatus: RecordingStatus;
+  inline?: boolean;
 }
 
 const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   onStartRecording,
   onStopRecording,
   recordingStatus,
+  inline = false,
 }) => {
   const [timeLeft, setTimeLeft] = useState(30);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -62,7 +64,7 @@ const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
 
         mediaRecorder.onstop = async () => {
           const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-          await uploadToS3(blob); // Upload when recording stops
+          await uploadToS3(blob);
         };
 
         mediaRecorder.start();
@@ -99,25 +101,61 @@ const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     }
   };
 
-const uploadToS3 = async (videoBlob: Blob) => {
-  const formData = new FormData();
-  formData.append('video', videoBlob, 'recording.webm');
+  const uploadToS3 = async (videoBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'recording.webm');
 
-  try {
-    const response = await axios.post('http://localhost:4000/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    console.log('Uploaded successfully:', response.data.url);
-  } catch (error) {
-    console.error('Upload failed:', error);
-  }
-};
+    try {
+      const response = await axios.post('http://localhost:4000/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      console.log('Uploaded successfully:', response.data.url);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  };
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (inline) {
+    return (
+      <div className="flex items-center space-x-4">
+        {recordingStatus === 'recording' && (
+          <div className="flex items-center space-x-2 bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
+            <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+            <span>{formatTime(timeLeft)}</span>
+          </div>
+        )}
+        
+        {recordingStatus === 'idle' && (
+          <button
+            onClick={onStartRecording}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+          >
+            <Video className="w-4 h-4 mr-2" />
+            Start Recording
+          </button>
+        )}
+        
+        {recordingStatus === 'recording' && (
+          <button
+            onClick={() => {
+              stopRecording();
+              onStopRecording();
+            }}
+            className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
+          >
+            <Square className="w-4 h-4 mr-2" />
+            Stop
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fadeIn">
@@ -155,26 +193,30 @@ const uploadToS3 = async (videoBlob: Blob) => {
         )}
       </div>
 
-      {recordingStatus === 'idle' && (
-        <button
-          onClick={onStartRecording}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
-        >
-          Start Recording
-        </button>
-      )}
+      {!inline && (
+        <>
+          {recordingStatus === 'idle' && (
+            <button
+              onClick={onStartRecording}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
+            >
+              Start Recording
+            </button>
+          )}
 
-      {recordingStatus === 'recording' && (
-        <button
-          onClick={() => {
-            stopRecording();
-            onStopRecording();
-          }}
-          className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
-        >
-          <StopCircle className="mr-2" size={20} />
-          Stop Recording
-        </button>
+          {recordingStatus === 'recording' && (
+            <button
+              onClick={() => {
+                stopRecording();
+                onStopRecording();
+              }}
+              className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
+            >
+              <StopCircle className="mr-2" size={20} />
+              Stop Recording
+            </button>
+          )}
+        </>
       )}
     </div>
   );

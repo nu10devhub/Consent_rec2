@@ -36,8 +36,16 @@ const ConsentRecorder: React.FC<ConsentRecorderProps> = ({ onNotify }) => {
   
   return (
     <div className="h-full flex flex-col glass-card rounded-xl overflow-hidden">
-      <div className="p-6 border-b border-gray-200 border-opacity-20">
+      <div className="p-6 border-b border-gray-200 border-opacity-20 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800">Consent Recording</h2>
+        {showRecordingInterface && (
+          <RecordingInterface
+            recordingStatus={recordingStatus}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            inline={true}
+          />
+        )}
       </div>
       
       <div className="p-6 flex-grow overflow-y-auto">
@@ -73,14 +81,7 @@ const ConsentRecorder: React.FC<ConsentRecorderProps> = ({ onNotify }) => {
                   bn: 'আমি [নাম] পণ্যটি সম্পূর্ণভাবে পর্যালোচনা করেছি এবং বুঝেছি, এবং আমি আবেদন প্রক্রিয়া এগিয়ে নিতে প্রস্তুত।'
                 }[selectedLanguage?.code || 'en']}
               </p>
-
             </div>
-            
-            <RecordingInterface
-              recordingStatus={recordingStatus}
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
-            />
           </div>
         )}
       </div>
